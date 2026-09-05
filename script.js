@@ -48,6 +48,49 @@ let unsubscribeMessages = null;
 
 nameInput.value = localStorage.getItem("chat-name") || "";
 
+const SESSION_KEY = "chat-session";
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1時間
+
+function saveSession(name) {
+  localStorage.setItem(
+    SESSION_KEY,
+    JSON.stringify({ name, expiresAt: Date.now() + SESSION_DURATION_MS })
+  );
+}
+
+function loadSession() {
+  const raw = localStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    const session = JSON.parse(raw);
+    if (session.name && session.expiresAt > Date.now()) {
+      return session.name;
+    }
+  } catch (err) {
+    // 壊れたセッション情報は無視する
+  }
+  localStorage.removeItem(SESSION_KEY);
+  return null;
+}
+
+async function resumeSession(name) {
+  try {
+    await signInAnonymously(auth);
+    myName = name;
+    showPartnerSelect();
+  } catch (err) {
+    console.error(err);
+    localStorage.removeItem(SESSION_KEY);
+    location.reload();
+  }
+}
+
+const resumedName = loadSession();
+if (resumedName) {
+  loginOverlay.remove();
+  resumeSession(resumedName);
+}
+
 async function sha256Hex(text) {
   const data = new TextEncoder().encode(text);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -119,6 +162,7 @@ loginForm.addEventListener("submit", async (e) => {
 
     myName = name;
     localStorage.setItem("chat-name", name);
+    saveSession(name);
     loginOverlay.remove();
     showPartnerSelect();
   } catch (err) {
