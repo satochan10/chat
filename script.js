@@ -51,10 +51,14 @@ nameInput.value = localStorage.getItem("chat-name") || "";
 const SESSION_KEY = "chat-session";
 const SESSION_DURATION_MS = 60 * 60 * 1000; // 1時間
 
-function saveSession(name) {
+function saveSession(name, partner) {
   localStorage.setItem(
     SESSION_KEY,
-    JSON.stringify({ name, expiresAt: Date.now() + SESSION_DURATION_MS })
+    JSON.stringify({
+      name,
+      partner: partner || null,
+      expiresAt: Date.now() + SESSION_DURATION_MS,
+    })
   );
 }
 
@@ -64,7 +68,7 @@ function loadSession() {
   try {
     const session = JSON.parse(raw);
     if (session.name && session.expiresAt > Date.now()) {
-      return session.name;
+      return session;
     }
   } catch (err) {
     // 壊れたセッション情報は無視する
@@ -73,11 +77,15 @@ function loadSession() {
   return null;
 }
 
-async function resumeSession(name) {
+async function resumeSession(session) {
   try {
     await signInAnonymously(auth);
-    myName = name;
-    showPartnerSelect();
+    myName = session.name;
+    if (session.partner) {
+      startChat(session.partner);
+    } else {
+      showPartnerSelect();
+    }
   } catch (err) {
     console.error(err);
     localStorage.removeItem(SESSION_KEY);
@@ -85,10 +93,10 @@ async function resumeSession(name) {
   }
 }
 
-const resumedName = loadSession();
-if (resumedName) {
+const resumedSession = loadSession();
+if (resumedSession) {
   loginOverlay.remove();
-  resumeSession(resumedName);
+  resumeSession(resumedSession);
 }
 
 async function sha256Hex(text) {
@@ -175,6 +183,9 @@ loginForm.addEventListener("submit", async (e) => {
 async function showPartnerSelect() {
   chatContainer.hidden = true;
   currentPartner = null;
+  if (myName) {
+    saveSession(myName, null);
+  }
   if (unsubscribeMessages) {
     unsubscribeMessages();
     unsubscribeMessages = null;
@@ -216,6 +227,7 @@ async function showPartnerSelect() {
 
 function startChat(partnerName) {
   currentPartner = partnerName;
+  saveSession(myName, partnerName);
   partnerOverlay.hidden = true;
   chatContainer.hidden = false;
   chatTitle.textContent = partnerName;
