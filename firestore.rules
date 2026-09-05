@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{name}: 名前ごとのPINハッシュを保持する「アカウント」ドキュメント。
+    // 一度作成されたら本人（同じ名前・同じPIN）以外は上書きできない。
+    match /users/{name} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(["pinHash", "createdAt"])
+        && request.resource.data.pinHash is string;
+      allow update, delete: if false;
+    }
+
+    // messages/{id}: チャットメッセージ。誰でも読めるが、編集・削除は不可（送信のみ）。
+    match /messages/{messageId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() < 2000;
+      allow update, delete: if false;
+    }
+  }
+}

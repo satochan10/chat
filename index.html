@@ -15,6 +15,17 @@
       <button type="submit">送信</button>
     </form>
   </div>
-  <script src="script.js"></script>
+
+  <div id="login-overlay" class="login-overlay">
+    <form id="login-form" class="login-form">
+      <h2>ログイン</h2>
+      <input id="login-name" type="text" placeholder="名前" autocomplete="off" maxlength="20" />
+      <input id="login-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4桁のパスワード" autocomplete="off" />
+      <p id="login-error" class="login-error"></p>
+      <button type="submit">はじめる</button>
+    </form>
+  </div>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>

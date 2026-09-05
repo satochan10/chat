@@ -79,6 +79,13 @@ body {
   font-style: italic;
 }
 
+.message-name {
+  font-size: 12px;
+  font-weight: bold;
+  color: #888;
+  margin-bottom: 2px;
+}
+
 .input-form {
   display: flex;
   border-top: 1px solid var(--border);
@@ -103,4 +110,60 @@ body {
 
 .input-form button:active {
   opacity: 0.8;
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 320px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.login-form h2 {
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.login-form input {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+
+.login-form button {
+  border: none;
+  border-radius: 4px;
+  background: var(--header-bg);
+  color: #fff;
+  padding: 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.login-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.login-error {
+  color: #d33;
+  font-size: 13px;
+  min-height: 1em;
+  margin: 0;
 }
