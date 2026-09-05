@@ -37,11 +37,13 @@ const partnerEmpty = document.getElementById("partner-empty");
 const chatContainer = document.getElementById("chat-container");
 const chatTitle = document.getElementById("chat-title");
 const backBtn = document.getElementById("back-btn");
+const reloadBtn = document.getElementById("reload-btn");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 
 let myName = null;
+let currentPartner = null;
 let unsubscribeMessages = null;
 
 nameInput.value = localStorage.getItem("chat-name") || "";
@@ -128,6 +130,7 @@ loginForm.addEventListener("submit", async (e) => {
 
 async function showPartnerSelect() {
   chatContainer.hidden = true;
+  currentPartner = null;
   if (unsubscribeMessages) {
     unsubscribeMessages();
     unsubscribeMessages = null;
@@ -168,6 +171,7 @@ async function showPartnerSelect() {
 }
 
 function startChat(partnerName) {
+  currentPartner = partnerName;
   partnerOverlay.hidden = true;
   chatContainer.hidden = false;
   chatTitle.textContent = partnerName;
@@ -182,7 +186,12 @@ function startChat(partnerName) {
     limit(200)
   );
 
+  setReloading(true);
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+  }
   unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
+    setReloading(false);
     messages.innerHTML = "";
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -210,6 +219,17 @@ function startChat(partnerName) {
   };
 }
 
+function setReloading(isLoading) {
+  reloadBtn.disabled = isLoading;
+  reloadBtn.classList.toggle("loading", isLoading);
+}
+
 backBtn.addEventListener("click", () => {
   showPartnerSelect();
+});
+
+reloadBtn.addEventListener("click", () => {
+  if (currentPartner) {
+    startChat(currentPartner);
+  }
 });
