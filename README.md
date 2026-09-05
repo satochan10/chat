@@ -27,6 +27,36 @@ Firestoreを使った複数人リアルタイムチャットのWebアプリ。Gi
 4. Firestore の「ルール」タブに、このリポジトリの `firestore.rules` の内容を貼り付けて公開
 5. プロジェクトの設定 >「マイアプリ」でウェブアプリを追加し、表示された設定オブジェクトの値を `firebase-config.js` の該当箇所に貼り付け
 
+## Firebase設定情報
+
+このアプリが使用しているFirebaseプロジェクト（`chat-63f96`）のWeb SDK設定は以下の通り。
+
+```js
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCp3hj4KRJweAyAXo8NBVrpY2Wy7AQfIw4",
+  authDomain: "chat-63f96.firebaseapp.com",
+  projectId: "chat-63f96",
+  storageBucket: "chat-63f96.firebasestorage.app",
+  messagingSenderId: "210146012521",
+  appId: "1:210146012521:web:2c3e537f45e33a325021f8",
+  measurementId: "G-4KFWP7R9VF"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+```
+
+このアプリ自体はビルド不要の静的サイトのため、Analytics付きの上記コードそのままではなく `firebase-config.js` の `firebaseConfig` オブジェクトに値を反映して使う（`initializeApp`／`getAnalytics` の呼び出しは `script.js` 側の初期化ロジックに委ねる）。
+
 ## ローカルで確認する
 
 ```sh
