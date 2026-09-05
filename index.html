@@ -7,8 +7,11 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="chat-container">
-    <header class="chat-header">Chat</header>
+  <div id="chat-container" class="chat-container" hidden>
+    <header class="chat-header">
+      <button id="back-btn" class="header-back-btn" type="button">←</button>
+      <span id="chat-title">Chat</span>
+    </header>
     <div id="messages" class="messages"></div>
     <form id="form" class="input-form">
       <input id="input" type="text" placeholder="メッセージを入力..." autocomplete="off" />
@@ -24,6 +27,14 @@
       <p id="login-error" class="login-error"></p>
       <button type="submit">はじめる</button>
     </form>
+  </div>
+
+  <div id="partner-overlay" class="login-overlay" hidden>
+    <div class="login-form">
+      <h2>誰とチャットしますか？</h2>
+      <ul id="partner-list" class="partner-list"></ul>
+      <p id="partner-empty" class="login-error"></p>
+    </div>
   </div>
 
   <script type="module" src="script.js"></script>

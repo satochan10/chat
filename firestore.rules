@@ -12,10 +12,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // messages/{id}: チャットメッセージ。誰でも読めるが、編集・削除は不可（送信のみ）。
+    // messages/{id}: 1対1チャットのメッセージ。誰でも読めるが、編集・削除は不可（送信のみ）。
+    // conversationId は2人の名前をソートして "__" で結合した文字列（クライアント側で生成）。
     match /messages/{messageId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
+        && request.resource.data.conversationId is string
+        && request.resource.data.conversationId.size() > 0
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
         && request.resource.data.text is string

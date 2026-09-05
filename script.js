@@ -8,10 +8,12 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   addDoc,
   serverTimestamp,
   query,
+  where,
   orderBy,
   limit,
   onSnapshot,
@@ -28,11 +30,19 @@ const nameInput = document.getElementById("login-name");
 const pinInput = document.getElementById("login-pin");
 const loginError = document.getElementById("login-error");
 
+const partnerOverlay = document.getElementById("partner-overlay");
+const partnerList = document.getElementById("partner-list");
+const partnerEmpty = document.getElementById("partner-empty");
+
+const chatContainer = document.getElementById("chat-container");
+const chatTitle = document.getElementById("chat-title");
+const backBtn = document.getElementById("back-btn");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
 
 let myName = null;
+let unsubscribeMessages = null;
 
 nameInput.value = localStorage.getItem("chat-name") || "";
 
@@ -42,6 +52,10 @@ async function sha256Hex(text) {
   return Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+function conversationId(nameA, nameB) {
+  return [nameA, nameB].sort().join("__");
 }
 
 function addMessageBubble(text, sender, name) {
@@ -104,7 +118,7 @@ loginForm.addEventListener("submit", async (e) => {
     myName = name;
     localStorage.setItem("chat-name", name);
     loginOverlay.remove();
-    startChat();
+    showPartnerSelect();
   } catch (err) {
     console.error(err);
     loginError.textContent = "ログインに失敗しました。時間をおいて再試行してください。";
@@ -112,11 +126,63 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-function startChat() {
-  const messagesRef = collection(db, "messages");
-  const messagesQuery = query(messagesRef, orderBy("createdAt", "asc"), limit(200));
+async function showPartnerSelect() {
+  chatContainer.hidden = true;
+  if (unsubscribeMessages) {
+    unsubscribeMessages();
+    unsubscribeMessages = null;
+  }
 
-  onSnapshot(messagesQuery, (snapshot) => {
+  partnerOverlay.hidden = false;
+  partnerList.innerHTML = "";
+  partnerEmpty.textContent = "読み込み中...";
+
+  try {
+    const usersSnap = await getDocs(collection(db, "users"));
+    const otherNames = usersSnap.docs
+      .map((d) => d.id)
+      .filter((name) => name !== myName)
+      .sort((a, b) => a.localeCompare(b, "ja"));
+
+    partnerEmpty.textContent = "";
+
+    if (otherNames.length === 0) {
+      partnerEmpty.textContent = "他のユーザーがまだいません。";
+      return;
+    }
+
+    otherNames.forEach((name) => {
+      const li = document.createElement("li");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "partner-item";
+      btn.textContent = name;
+      btn.addEventListener("click", () => startChat(name));
+      li.appendChild(btn);
+      partnerList.appendChild(li);
+    });
+  } catch (err) {
+    console.error(err);
+    partnerEmpty.textContent = "ユーザー一覧の取得に失敗しました。";
+  }
+}
+
+function startChat(partnerName) {
+  partnerOverlay.hidden = true;
+  chatContainer.hidden = false;
+  chatTitle.textContent = partnerName;
+  messages.innerHTML = "";
+
+  const convoId = conversationId(myName, partnerName);
+  const messagesRef = collection(db, "messages");
+  const messagesQuery = query(
+    messagesRef,
+    where("conversationId", "==", convoId),
+    orderBy("createdAt", "asc"),
+    limit(200)
+  );
+
+  unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
     messages.innerHTML = "";
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -125,7 +191,7 @@ function startChat() {
     });
   });
 
-  form.addEventListener("submit", async (e) => {
+  form.onsubmit = async (e) => {
     e.preventDefault();
     const text = input.value.trim();
     if (!text) return;
@@ -133,6 +199,7 @@ function startChat() {
     input.value = "";
     try {
       await addDoc(messagesRef, {
+        conversationId: convoId,
         name: myName,
         text,
         createdAt: serverTimestamp(),
@@ -140,5 +207,9 @@ function startChat() {
     } catch (err) {
       console.error(err);
     }
-  });
+  };
 }
+
+backBtn.addEventListener("click", () => {
+  showPartnerSelect();
+});
