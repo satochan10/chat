@@ -490,6 +490,12 @@ addFriendForm.addEventListener("submit", async (e) => {
   }
 });
 
+function notifyNewMessage(partnerName, text) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  if (!document.hidden) return;
+  new Notification(partnerName, { body: text });
+}
+
 function startChat(partnerName) {
   currentPartner = partnerName;
   saveSession(myName, partnerName);
@@ -501,6 +507,10 @@ function startChat(partnerName) {
     chatPartnerIcon.textContent = icon;
   });
   messages.innerHTML = "";
+
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
 
   if (unsubscribeFriendshipsA) {
     unsubscribeFriendshipsA();
@@ -524,6 +534,7 @@ function startChat(partnerName) {
   if (unsubscribeMessages) {
     unsubscribeMessages();
   }
+  let isFirstSnapshot = true;
   unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
     setReloading(false);
     messages.innerHTML = "";
@@ -533,6 +544,16 @@ function startChat(partnerName) {
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : null;
       addMessageBubble(data.text, sender, data.name, createdAt);
     });
+
+    if (!isFirstSnapshot) {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type !== "added") return;
+        const data = change.doc.data();
+        if (data.name === myName) return;
+        notifyNewMessage(data.name, data.text);
+      });
+    }
+    isFirstSnapshot = false;
   });
 
   form.onsubmit = async (e) => {
