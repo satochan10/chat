@@ -56,6 +56,24 @@ const form = document.getElementById("form");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("send-btn");
 const messages = document.getElementById("messages");
+const stampBtn = document.getElementById("stamp-btn");
+const stampPicker = document.getElementById("stamp-picker");
+
+const STAMP_OPTIONS = ["👍", "❤️", "🎉"];
+STAMP_OPTIONS.forEach((stamp) => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "stamp-option";
+  btn.textContent = stamp;
+  btn.addEventListener("click", () => sendStamp(stamp));
+  stampPicker.appendChild(btn);
+});
+
+stampBtn.addEventListener("click", () => {
+  stampPicker.hidden = !stampPicker.hidden;
+});
+
+let sendStamp = async () => {};
 
 input.addEventListener("input", () => {
   sendBtn.disabled = input.value.trim() === "";
@@ -222,9 +240,9 @@ function clearUnreadListeners() {
   unreadUnsubscribes.clear();
 }
 
-function addMessageBubble(text, sender, name, createdAt) {
+function addMessageBubble(text, sender, name, createdAt, type) {
   const bubble = document.createElement("div");
-  bubble.className = `message ${sender}`;
+  bubble.className = `message ${sender}${type === "stamp" ? " stamp" : ""}`;
 
   if (sender === "other") {
     const label = document.createElement("div");
@@ -237,6 +255,9 @@ function addMessageBubble(text, sender, name, createdAt) {
   row.className = "message-row";
 
   const body = document.createElement("div");
+  if (type === "stamp") {
+    body.className = "stamp-body";
+  }
   body.textContent = text;
   row.appendChild(body);
 
@@ -569,6 +590,7 @@ function startChat(partnerName) {
     chatPartnerIcon.textContent = icon;
   });
   messages.innerHTML = "";
+  stampPicker.hidden = true;
 
   if ("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
@@ -606,7 +628,7 @@ function startChat(partnerName) {
       const data = docSnap.data();
       const sender = data.name === myName ? "me" : "other";
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : null;
-      addMessageBubble(data.text, sender, data.name, createdAt);
+      addMessageBubble(data.text, sender, data.name, createdAt, data.type);
       if (createdAt) latestMs = createdAt.getTime();
     });
     if (latestMs) setLastRead(convoId, latestMs);
@@ -634,6 +656,21 @@ function startChat(partnerName) {
         conversationId: convoId,
         name: myName,
         text,
+        createdAt: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  sendStamp = async (stamp) => {
+    stampPicker.hidden = true;
+    try {
+      await addDoc(messagesRef, {
+        conversationId: convoId,
+        name: myName,
+        text: stamp,
+        type: "stamp",
         createdAt: serverTimestamp(),
       });
     } catch (err) {
