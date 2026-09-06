@@ -503,9 +503,9 @@ body {
   border: 2px solid #ffd7e6;
   border-radius: 50%;
   background: #fff8fb;
-  width: 68px;
-  height: 68px;
-  font-size: 38px;
+  width: 96px;
+  height: 96px;
+  font-size: 54px;
   line-height: 1;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.12s;
