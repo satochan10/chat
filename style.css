@@ -500,12 +500,16 @@ body {
 }
 
 .my-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 2px solid #ffd7e6;
   border-radius: 50%;
   background: #fff8fb;
   width: 96px;
   height: 96px;
-  font-size: 54px;
+  padding: 0;
+  font-size: 76px;
   line-height: 1;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.12s;
