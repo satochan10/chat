@@ -40,7 +40,12 @@ const backBtn = document.getElementById("back-btn");
 const reloadBtn = document.getElementById("reload-btn");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
+const sendBtn = document.getElementById("send-btn");
 const messages = document.getElementById("messages");
+
+input.addEventListener("input", () => {
+  sendBtn.disabled = input.value.trim() === "";
+});
 
 let myName = null;
 let currentPartner = null;
@@ -281,6 +286,7 @@ function startChat(partnerName) {
     if (!text) return;
 
     input.value = "";
+    sendBtn.disabled = true;
     try {
       await addDoc(messagesRef, {
         conversationId: convoId,
