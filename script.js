@@ -310,7 +310,7 @@ backBtn.addEventListener("click", () => {
 });
 
 reloadBtn.addEventListener("click", () => {
-  if (currentPartner) {
-    startChat(currentPartner);
-  }
+  const url = new URL(location.href);
+  url.searchParams.set("_", Date.now());
+  location.replace(url.toString());
 });
