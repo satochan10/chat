@@ -51,6 +51,7 @@ const chatTitle = document.getElementById("chat-title");
 const chatPartnerIcon = document.getElementById("chat-partner-icon");
 const backBtn = document.getElementById("back-btn");
 const reloadBtn = document.getElementById("reload-btn");
+const homeReloadBtn = document.getElementById("home-reload-btn");
 const form = document.getElementById("form");
 const input = document.getElementById("input");
 const sendBtn = document.getElementById("send-btn");
@@ -563,8 +564,11 @@ backBtn.addEventListener("click", () => {
   showPartnerSelect();
 });
 
-reloadBtn.addEventListener("click", () => {
+function hardReload() {
   const url = new URL(location.href);
   url.searchParams.set("_", Date.now());
   location.replace(url.toString());
-});
+}
+
+reloadBtn.addEventListener("click", hardReload);
+homeReloadBtn.addEventListener("click", hardReload);
