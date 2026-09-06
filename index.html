@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chat App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,11 +25,13 @@
 
   <div id="login-overlay" class="login-overlay">
     <form id="login-form" class="login-form">
+      <div class="login-mascot">🐻</div>
       <h2>ログイン</h2>
-      <input id="login-name" type="text" placeholder="名前" autocomplete="off" maxlength="20" />
-      <input id="login-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="4桁のパスワード" autocomplete="off" />
+      <p class="login-sub">なまえとパスワードを入力してね♪</p>
+      <input id="login-name" type="text" placeholder="✏️ 名前" autocomplete="off" maxlength="20" />
+      <input id="login-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="🔒 4桁のパスワード" autocomplete="off" />
       <p id="login-error" class="login-error"></p>
-      <button type="submit">はじめる</button>
+      <button type="submit">はじめる 💌</button>
     </form>
   </div>
 
