@@ -73,6 +73,7 @@ let unsubscribeFriendshipsA = null;
 let unsubscribeFriendshipsB = null;
 let friendshipsAsUserA = new Map();
 let friendshipsAsUserB = new Map();
+let unreadUnsubscribes = new Map();
 
 ICON_OPTIONS.forEach((icon) => {
   const btn = document.createElement("button");
@@ -194,6 +195,33 @@ function formatTimestamp(date) {
   });
 }
 
+const LAST_READ_KEY = "chatLastRead";
+
+function getLastReadMap() {
+  try {
+    return JSON.parse(localStorage.getItem(LAST_READ_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function getLastRead(convoId) {
+  return getLastReadMap()[convoId] || 0;
+}
+
+function setLastRead(convoId, ms) {
+  const map = getLastReadMap();
+  if (ms > (map[convoId] || 0)) {
+    map[convoId] = ms;
+    localStorage.setItem(LAST_READ_KEY, JSON.stringify(map));
+  }
+}
+
+function clearUnreadListeners() {
+  unreadUnsubscribes.forEach((unsub) => unsub());
+  unreadUnsubscribes.clear();
+}
+
 function addMessageBubble(text, sender, name, createdAt) {
   const bubble = document.createElement("div");
   bubble.className = `message ${sender}`;
@@ -296,6 +324,7 @@ function showPartnerSelect() {
 
   if (unsubscribeFriendshipsA) unsubscribeFriendshipsA();
   if (unsubscribeFriendshipsB) unsubscribeFriendshipsB();
+  clearUnreadListeners();
 
   const friendshipsRef = collection(db, "friendships");
 
@@ -384,10 +413,12 @@ function renderPartnerLists() {
   });
 
   partnerList.innerHTML = "";
+  clearUnreadListeners();
   if (friends.length === 0) {
     partnerEmpty.textContent = "まだ友達がいません。下から友達を追加してね。";
   } else {
     partnerEmpty.textContent = "";
+    const badgesByConvoId = new Map();
     friends.forEach(({ name }) => {
       const li = document.createElement("li");
       const btn = document.createElement("button");
@@ -405,10 +436,41 @@ function renderPartnerLists() {
       label.textContent = name;
       btn.appendChild(label);
 
+      const badge = document.createElement("span");
+      badge.className = "unread-badge";
+      badge.hidden = true;
+      btn.appendChild(badge);
+
       btn.addEventListener("click", () => startChat(name));
       li.appendChild(btn);
       partnerList.appendChild(li);
+
+      badgesByConvoId.set(pairId(myName, name), badge);
     });
+
+    // Firestoreの複合インデックスを増やさずに済むよう、降順クエリ（別インデックスが必要）は使わず、
+    // 既存の「conversationId等価 + createdAt昇順」インデックスで賄える in句の昇順クエリで各会話の最新メッセージを取る。
+    const convoIds = [...badgesByConvoId.keys()].slice(0, 30);
+    const latestQuery = query(
+      collection(db, "messages"),
+      where("conversationId", "in", convoIds),
+      orderBy("createdAt", "asc"),
+      limit(500)
+    );
+    const unsubscribe = onSnapshot(latestQuery, (snapshot) => {
+      const latestByConvoId = new Map();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : null;
+        if (!createdAt) return;
+        latestByConvoId.set(data.conversationId, { name: data.name, ms: createdAt.getTime() });
+      });
+      badgesByConvoId.forEach((badge, convoId) => {
+        const latest = latestByConvoId.get(convoId);
+        badge.hidden = !(latest && latest.name !== myName && latest.ms > getLastRead(convoId));
+      });
+    });
+    unreadUnsubscribes.set("all", unsubscribe);
   }
 
   outgoingRequestsSection.hidden = outgoing.length === 0;
@@ -520,6 +582,7 @@ function startChat(partnerName) {
     unsubscribeFriendshipsB();
     unsubscribeFriendshipsB = null;
   }
+  clearUnreadListeners();
 
   const convoId = pairId(myName, partnerName);
   const messagesRef = collection(db, "messages");
@@ -538,12 +601,15 @@ function startChat(partnerName) {
   unsubscribeMessages = onSnapshot(messagesQuery, (snapshot) => {
     setReloading(false);
     messages.innerHTML = "";
+    let latestMs = 0;
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const sender = data.name === myName ? "me" : "other";
       const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : null;
       addMessageBubble(data.text, sender, data.name, createdAt);
+      if (createdAt) latestMs = createdAt.getTime();
     });
+    if (latestMs) setLastRead(convoId, latestMs);
 
     if (!isFirstSnapshot) {
       snapshot.docChanges().forEach((change) => {

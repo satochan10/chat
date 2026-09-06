@@ -381,6 +381,15 @@ body {
   transform: scale(0.98);
 }
 
+.unread-badge {
+  width: 10px;
+  height: 10px;
+  margin-left: auto;
+  border-radius: 50%;
+  background: #ff5c8a;
+  flex-shrink: 0;
+}
+
 .partner-panel {
   max-width: 360px;
   max-height: 90vh;
