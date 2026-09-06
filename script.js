@@ -111,7 +111,15 @@ function conversationId(nameA, nameB) {
   return [nameA, nameB].sort().join("__");
 }
 
-function addMessageBubble(text, sender, name) {
+function formatTimestamp(date) {
+  if (!date) return "";
+  return date.toLocaleTimeString("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function addMessageBubble(text, sender, name, createdAt) {
   const bubble = document.createElement("div");
   bubble.className = `message ${sender}`;
 
@@ -122,9 +130,19 @@ function addMessageBubble(text, sender, name) {
     bubble.appendChild(label);
   }
 
+  const row = document.createElement("div");
+  row.className = "message-row";
+
   const body = document.createElement("div");
   body.textContent = text;
-  bubble.appendChild(body);
+  row.appendChild(body);
+
+  const time = document.createElement("div");
+  time.className = "message-time";
+  time.textContent = formatTimestamp(createdAt);
+  row.appendChild(time);
+
+  bubble.appendChild(row);
 
   messages.appendChild(bubble);
   messages.scrollTop = messages.scrollHeight;
@@ -252,7 +270,8 @@ function startChat(partnerName) {
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
       const sender = data.name === myName ? "me" : "other";
-      addMessageBubble(data.text, sender, data.name);
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : null;
+      addMessageBubble(data.text, sender, data.name, createdAt);
     });
   });
 

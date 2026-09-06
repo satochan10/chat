@@ -126,6 +126,23 @@ body {
   margin-bottom: 2px;
 }
 
+.message-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.message.me .message-row {
+  flex-direction: row-reverse;
+}
+
+.message-time {
+  font-size: 11px;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .input-form {
   display: flex;
   border-top: 1px solid var(--border);
