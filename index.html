@@ -36,13 +36,36 @@
   </div>
 
   <div id="partner-overlay" class="login-overlay" hidden>
-    <div class="login-form">
+    <div class="login-form partner-panel">
       <h2>誰とチャットしますか？</h2>
-      <ul id="partner-list" class="partner-list"></ul>
-      <p id="partner-empty" class="login-error"></p>
+
+      <div id="friend-requests-section" class="partner-section" hidden>
+        <h3>届いている申請</h3>
+        <ul id="friend-requests-list" class="request-list"></ul>
+      </div>
+
+      <div class="partner-section">
+        <h3>友達</h3>
+        <ul id="partner-list" class="partner-list"></ul>
+        <p id="partner-empty" class="login-error"></p>
+      </div>
+
+      <div id="outgoing-requests-section" class="partner-section" hidden>
+        <h3>申請中</h3>
+        <ul id="outgoing-requests-list" class="request-list outgoing"></ul>
+      </div>
+
+      <div class="partner-section">
+        <h3>友達を追加</h3>
+        <form id="add-friend-form" class="add-friend-form">
+          <input id="add-friend-name" type="text" placeholder="✏️ 相手の名前" autocomplete="off" maxlength="20" />
+          <button type="submit">申請する 💌</button>
+        </form>
+        <p id="add-friend-error" class="login-error"></p>
+      </div>
     </div>
   </div>
 
-  <script type="module" src="script.js?v=2"></script>
+  <script type="module" src="script.js?v=3"></script>
 </body>
 </html>

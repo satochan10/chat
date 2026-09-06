@@ -350,3 +350,135 @@ body {
   opacity: 0.8;
   transform: scale(0.98);
 }
+
+.partner-panel {
+  max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.partner-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.partner-section h3 {
+  margin: 0;
+  font-size: 13px;
+  color: #b38ab0;
+  letter-spacing: 0.03em;
+}
+
+.partner-section + .partner-section {
+  padding-top: 14px;
+  border-top: 2px solid #ffe3ee;
+}
+
+.request-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.request-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid #ffd7e6;
+  border-radius: 999px;
+  background: #fff8fb;
+  color: #6b4a5a;
+  padding: 8px 8px 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.request-item span {
+  flex: 1;
+}
+
+.request-item.outgoing {
+  color: #b38ab0;
+  font-style: italic;
+  padding: 10px 18px;
+}
+
+.request-accept-btn,
+.request-reject-btn {
+  border: none;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.request-accept-btn {
+  background: linear-gradient(135deg, var(--cute-pink), var(--cute-purple));
+  color: #fff;
+}
+
+.request-reject-btn {
+  background: #f0e6ea;
+  color: #a24d78;
+}
+
+.request-accept-btn:active,
+.request-reject-btn:active {
+  transform: scale(0.95);
+}
+
+.add-friend-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-friend-form input {
+  flex: 1;
+  border: 2px solid #ffd7e6;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff8fb;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.add-friend-form input:focus {
+  border-color: var(--cute-pink);
+  box-shadow: 0 0 0 4px rgba(255, 143, 177, 0.2);
+}
+
+.add-friend-form button {
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--cute-pink), var(--cute-purple));
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(255, 143, 177, 0.4);
+  transition: transform 0.12s ease;
+}
+
+.add-friend-form button:active {
+  transform: scale(0.95);
+}
+
+.add-friend-form button:disabled {
+  background: #d9d9d9;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
+}

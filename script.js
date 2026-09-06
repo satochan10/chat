@@ -11,6 +11,8 @@ import {
   getDocs,
   setDoc,
   addDoc,
+  updateDoc,
+  deleteDoc,
   serverTimestamp,
   query,
   where,
@@ -33,6 +35,13 @@ const loginError = document.getElementById("login-error");
 const partnerOverlay = document.getElementById("partner-overlay");
 const partnerList = document.getElementById("partner-list");
 const partnerEmpty = document.getElementById("partner-empty");
+const friendRequestsSection = document.getElementById("friend-requests-section");
+const friendRequestsList = document.getElementById("friend-requests-list");
+const outgoingRequestsSection = document.getElementById("outgoing-requests-section");
+const outgoingRequestsList = document.getElementById("outgoing-requests-list");
+const addFriendForm = document.getElementById("add-friend-form");
+const addFriendNameInput = document.getElementById("add-friend-name");
+const addFriendError = document.getElementById("add-friend-error");
 
 const chatContainer = document.getElementById("chat-container");
 const chatTitle = document.getElementById("chat-title");
@@ -50,6 +59,10 @@ input.addEventListener("input", () => {
 let myName = null;
 let currentPartner = null;
 let unsubscribeMessages = null;
+let unsubscribeFriendshipsA = null;
+let unsubscribeFriendshipsB = null;
+let friendshipsAsUserA = new Map();
+let friendshipsAsUserB = new Map();
 
 nameInput.value = localStorage.getItem("chat-name") || "";
 
@@ -112,7 +125,8 @@ async function sha256Hex(text) {
     .join("");
 }
 
-function conversationId(nameA, nameB) {
+// messagesのconversationIdとfriendshipsのドキュメントIDは同じ形式（2人の名前をソートして"__"で結合）。
+function pairId(nameA, nameB) {
   return [nameA, nameB].sort().join("__");
 }
 
@@ -203,7 +217,7 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-async function showPartnerSelect() {
+function showPartnerSelect() {
   chatContainer.hidden = true;
   currentPartner = null;
   if (myName) {
@@ -215,24 +229,96 @@ async function showPartnerSelect() {
   }
 
   partnerOverlay.hidden = false;
-  partnerList.innerHTML = "";
   partnerEmpty.textContent = "読み込み中...";
 
-  try {
-    const usersSnap = await getDocs(collection(db, "users"));
-    const otherNames = usersSnap.docs
-      .map((d) => d.id)
-      .filter((name) => name !== myName)
-      .sort((a, b) => a.localeCompare(b, "ja"));
+  if (unsubscribeFriendshipsA) unsubscribeFriendshipsA();
+  if (unsubscribeFriendshipsB) unsubscribeFriendshipsB();
 
-    partnerEmpty.textContent = "";
+  const friendshipsRef = collection(db, "friendships");
 
-    if (otherNames.length === 0) {
-      partnerEmpty.textContent = "他のユーザーがまだいません。";
-      return;
+  unsubscribeFriendshipsA = onSnapshot(
+    query(friendshipsRef, where("userA", "==", myName)),
+    (snapshot) => {
+      friendshipsAsUserA = new Map(snapshot.docs.map((d) => [d.id, d.data()]));
+      renderPartnerLists();
+    },
+    (err) => {
+      console.error(err);
+      partnerEmpty.textContent = "友達一覧の取得に失敗しました。";
     }
+  );
 
-    otherNames.forEach((name) => {
+  unsubscribeFriendshipsB = onSnapshot(
+    query(friendshipsRef, where("userB", "==", myName)),
+    (snapshot) => {
+      friendshipsAsUserB = new Map(snapshot.docs.map((d) => [d.id, d.data()]));
+      renderPartnerLists();
+    },
+    (err) => {
+      console.error(err);
+      partnerEmpty.textContent = "友達一覧の取得に失敗しました。";
+    }
+  );
+}
+
+function renderPartnerLists() {
+  const merged = new Map([...friendshipsAsUserA, ...friendshipsAsUserB]);
+
+  const friends = [];
+  const incoming = [];
+  const outgoing = [];
+
+  merged.forEach((data, id) => {
+    const otherName = data.userA === myName ? data.userB : data.userA;
+    if (data.status === "accepted") {
+      friends.push({ id, name: otherName });
+    } else if (data.status === "pending") {
+      if (data.requestedBy === myName) {
+        outgoing.push({ id, name: otherName });
+      } else {
+        incoming.push({ id, name: otherName });
+      }
+    }
+  });
+
+  const byName = (a, b) => a.name.localeCompare(b.name, "ja");
+  friends.sort(byName);
+  incoming.sort(byName);
+  outgoing.sort(byName);
+
+  friendRequestsSection.hidden = incoming.length === 0;
+  friendRequestsList.innerHTML = "";
+  incoming.forEach(({ id, name }) => {
+    const li = document.createElement("li");
+    li.className = "request-item";
+
+    const label = document.createElement("span");
+    label.textContent = name;
+    li.appendChild(label);
+
+    const acceptBtn = document.createElement("button");
+    acceptBtn.type = "button";
+    acceptBtn.className = "request-accept-btn";
+    acceptBtn.textContent = "承認";
+    acceptBtn.addEventListener("click", () => respondToFriendRequest(id, true));
+    li.appendChild(acceptBtn);
+
+    const rejectBtn = document.createElement("button");
+    rejectBtn.type = "button";
+    rejectBtn.className = "request-reject-btn";
+    rejectBtn.textContent = "拒否";
+    rejectBtn.addEventListener("click", () => respondToFriendRequest(id, false));
+    li.appendChild(rejectBtn);
+
+    friendRequestsList.appendChild(li);
+  });
+
+  partnerList.innerHTML = "";
+  if (friends.length === 0) {
+    partnerEmpty.textContent = "まだ友達がいません。下から友達を追加してね。";
+  } else {
+    partnerEmpty.textContent = "";
+    friends.forEach(({ name }) => {
       const li = document.createElement("li");
       const btn = document.createElement("button");
       btn.type = "button";
@@ -242,11 +328,75 @@ async function showPartnerSelect() {
       li.appendChild(btn);
       partnerList.appendChild(li);
     });
+  }
+
+  outgoingRequestsSection.hidden = outgoing.length === 0;
+  outgoingRequestsList.innerHTML = "";
+  outgoing.forEach(({ name }) => {
+    const li = document.createElement("li");
+    li.className = "request-item outgoing";
+    li.textContent = `${name} さんへ申請中...`;
+    outgoingRequestsList.appendChild(li);
+  });
+}
+
+async function respondToFriendRequest(id, accept) {
+  const ref = doc(db, "friendships", id);
+  try {
+    if (accept) {
+      await updateDoc(ref, { status: "accepted" });
+    } else {
+      await deleteDoc(ref);
+    }
   } catch (err) {
     console.error(err);
-    partnerEmpty.textContent = "ユーザー一覧の取得に失敗しました。";
   }
 }
+
+addFriendForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = addFriendNameInput.value.trim();
+  const submitBtn = addFriendForm.querySelector("button");
+  addFriendError.textContent = "";
+
+  if (!name) return;
+  if (name === myName) {
+    addFriendError.textContent = "自分自身には申請できません。";
+    return;
+  }
+
+  submitBtn.disabled = true;
+  try {
+    const userSnap = await getDoc(doc(db, "users", name));
+    if (!userSnap.exists()) {
+      addFriendError.textContent = "そのユーザーは見つかりません。";
+      return;
+    }
+
+    const id = pairId(myName, name);
+    const existing = await getDoc(doc(db, "friendships", id));
+    if (existing.exists()) {
+      addFriendError.textContent =
+        existing.data().status === "accepted" ? "すでに友達です。" : "すでに申請済みです。";
+      return;
+    }
+
+    const [userA, userB] = [myName, name].sort();
+    await setDoc(doc(db, "friendships", id), {
+      userA,
+      userB,
+      status: "pending",
+      requestedBy: myName,
+      createdAt: serverTimestamp(),
+    });
+    addFriendNameInput.value = "";
+  } catch (err) {
+    console.error(err);
+    addFriendError.textContent = "申請に失敗しました。時間をおいて再試行してください。";
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
 
 function startChat(partnerName) {
   currentPartner = partnerName;
@@ -256,7 +406,16 @@ function startChat(partnerName) {
   chatTitle.textContent = partnerName;
   messages.innerHTML = "";
 
-  const convoId = conversationId(myName, partnerName);
+  if (unsubscribeFriendshipsA) {
+    unsubscribeFriendshipsA();
+    unsubscribeFriendshipsA = null;
+  }
+  if (unsubscribeFriendshipsB) {
+    unsubscribeFriendshipsB();
+    unsubscribeFriendshipsB = null;
+  }
+
+  const convoId = pairId(myName, partnerName);
   const messagesRef = collection(db, "messages");
   const messagesQuery = query(
     messagesRef,

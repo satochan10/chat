@@ -12,8 +12,31 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // friendships/{pairId}: 2人の友達関係（申請・承認）。
+    // pairId は2人の名前をソートして "__" で結合した文字列（クライアント側で生成、messagesのconversationIdと同じ形式）。
+    match /friendships/{pairId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(["userA", "userB", "status", "requestedBy", "createdAt"])
+        && request.resource.data.userA is string
+        && request.resource.data.userB is string
+        && request.resource.data.userA < request.resource.data.userB
+        && pairId == request.resource.data.userA + "__" + request.resource.data.userB
+        && request.resource.data.status == "pending"
+        && (request.resource.data.requestedBy == request.resource.data.userA
+            || request.resource.data.requestedBy == request.resource.data.userB);
+      // 承認: pending -> accepted への変更のみ許可（申請元/宛先の区別はしない、身内利用のため簡易実装）。
+      allow update: if request.auth != null
+        && resource.data.status == "pending"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status"])
+        && request.resource.data.status == "accepted";
+      // 拒否・申請取り消し: pending の間だけ削除可能。
+      allow delete: if request.auth != null && resource.data.status == "pending";
+    }
+
     // messages/{id}: 1対1チャットのメッセージ。誰でも読めるが、編集・削除は不可（送信のみ）。
-    // conversationId は2人の名前をソートして "__" で結合した文字列（クライアント側で生成）。
+    // conversationId は2人の名前をソートして "__" で結合した文字列（クライアント側で生成、friendshipsのpairIdと同じ形式）。
+    // 送信できるのは friendships が accepted の相手のみ。
     match /messages/{messageId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
@@ -23,7 +46,9 @@ service cloud.firestore {
         && request.resource.data.name.size() > 0
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() < 2000;
+        && request.resource.data.text.size() < 2000
+        && exists(/databases/$(database)/documents/friendships/$(request.resource.data.conversationId))
+        && get(/databases/$(database)/documents/friendships/$(request.resource.data.conversationId)).data.status == "accepted";
       allow update, delete: if false;
     }
   }
