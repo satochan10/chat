@@ -13,6 +13,7 @@
   <div id="chat-container" class="chat-container" hidden>
     <header class="chat-header">
       <button id="back-btn" class="header-back-btn" type="button">←</button>
+      <span id="chat-partner-icon" class="chat-partner-icon"></span>
       <span id="chat-title">Chat</span>
       <button id="reload-btn" class="header-reload-btn" type="button" title="再読み込み">⟳</button>
     </header>
@@ -37,7 +38,17 @@
 
   <div id="partner-overlay" class="login-overlay" hidden>
     <div class="login-form partner-panel">
-      <h2>誰とチャットしますか？</h2>
+      <h2>ホーム</h2>
+
+      <div class="partner-section profile-section">
+        <div class="profile-row">
+          <button id="my-icon-btn" type="button" class="my-icon-btn" title="アイコンを変更"></button>
+          <span id="my-name-label" class="my-name-label"></span>
+        </div>
+        <div id="icon-picker" class="icon-picker" hidden></div>
+      </div>
+
+      <h3 class="partner-question">誰とチャットしますか？</h3>
 
       <div id="friend-requests-section" class="partner-section" hidden>
         <h3>届いている申請</h3>
@@ -66,6 +77,6 @@
     </div>
   </div>
 
-  <script type="module" src="script.js?v=3"></script>
+  <script type="module" src="script.js?v=4"></script>
 </body>
 </html>

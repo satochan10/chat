@@ -42,9 +42,13 @@ const outgoingRequestsList = document.getElementById("outgoing-requests-list");
 const addFriendForm = document.getElementById("add-friend-form");
 const addFriendNameInput = document.getElementById("add-friend-name");
 const addFriendError = document.getElementById("add-friend-error");
+const myIconBtn = document.getElementById("my-icon-btn");
+const myNameLabel = document.getElementById("my-name-label");
+const iconPicker = document.getElementById("icon-picker");
 
 const chatContainer = document.getElementById("chat-container");
 const chatTitle = document.getElementById("chat-title");
+const chatPartnerIcon = document.getElementById("chat-partner-icon");
 const backBtn = document.getElementById("back-btn");
 const reloadBtn = document.getElementById("reload-btn");
 const form = document.getElementById("form");
@@ -56,13 +60,63 @@ input.addEventListener("input", () => {
   sendBtn.disabled = input.value.trim() === "";
 });
 
+const ICON_OPTIONS = ["🐻", "🐰", "🐶", "🐱", "🦊", "🐼", "🐨", "🐯", "🦁", "🐸", "🐵", "🐹", "🐷", "🐮", "🐔", "🐧"];
+const DEFAULT_ICON = ICON_OPTIONS[0];
+const iconCache = new Map();
+
 let myName = null;
+let myIcon = DEFAULT_ICON;
 let currentPartner = null;
 let unsubscribeMessages = null;
 let unsubscribeFriendshipsA = null;
 let unsubscribeFriendshipsB = null;
 let friendshipsAsUserA = new Map();
 let friendshipsAsUserB = new Map();
+
+ICON_OPTIONS.forEach((icon) => {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "icon-option";
+  btn.textContent = icon;
+  btn.addEventListener("click", () => selectMyIcon(icon));
+  iconPicker.appendChild(btn);
+});
+
+myIconBtn.addEventListener("click", () => {
+  iconPicker.hidden = !iconPicker.hidden;
+});
+
+async function selectMyIcon(icon) {
+  if (icon === myIcon) {
+    iconPicker.hidden = true;
+    return;
+  }
+  const previousIcon = myIcon;
+  myIcon = icon;
+  myIconBtn.textContent = icon;
+  iconPicker.hidden = true;
+  try {
+    await updateDoc(doc(db, "users", myName), { icon });
+    iconCache.set(myName, icon);
+  } catch (err) {
+    console.error(err);
+    myIcon = previousIcon;
+    myIconBtn.textContent = previousIcon;
+  }
+}
+
+async function fetchIcon(name) {
+  if (iconCache.has(name)) return iconCache.get(name);
+  try {
+    const snap = await getDoc(doc(db, "users", name));
+    const icon = snap.exists() && snap.data().icon ? snap.data().icon : DEFAULT_ICON;
+    iconCache.set(name, icon);
+    return icon;
+  } catch (err) {
+    console.error(err);
+    return DEFAULT_ICON;
+  }
+}
 
 nameInput.value = localStorage.getItem("chat-name") || "";
 
@@ -99,6 +153,7 @@ async function resumeSession(session) {
   try {
     await signInAnonymously(auth);
     myName = session.name;
+    myIcon = await fetchIcon(myName);
     if (session.partner) {
       startChat(session.partner);
     } else {
@@ -198,12 +253,16 @@ loginForm.addEventListener("submit", async (e) => {
         submitBtn.disabled = false;
         return;
       }
+      myIcon = userSnap.data().icon || DEFAULT_ICON;
     } else {
+      myIcon = DEFAULT_ICON;
       await setDoc(userRef, {
         pinHash,
+        icon: myIcon,
         createdAt: serverTimestamp(),
       });
     }
+    iconCache.set(name, myIcon);
 
     myName = name;
     localStorage.setItem("chat-name", name);
@@ -230,6 +289,9 @@ function showPartnerSelect() {
 
   partnerOverlay.hidden = false;
   partnerEmpty.textContent = "読み込み中...";
+  myIconBtn.textContent = myIcon;
+  myNameLabel.textContent = myName;
+  iconPicker.hidden = true;
 
   if (unsubscribeFriendshipsA) unsubscribeFriendshipsA();
   if (unsubscribeFriendshipsB) unsubscribeFriendshipsB();
@@ -292,6 +354,13 @@ function renderPartnerLists() {
     const li = document.createElement("li");
     li.className = "request-item";
 
+    const icon = document.createElement("span");
+    icon.className = "list-icon";
+    li.appendChild(icon);
+    fetchIcon(name).then((value) => {
+      icon.textContent = value;
+    });
+
     const label = document.createElement("span");
     label.textContent = name;
     li.appendChild(label);
@@ -323,7 +392,18 @@ function renderPartnerLists() {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "partner-item";
-      btn.textContent = name;
+
+      const icon = document.createElement("span");
+      icon.className = "list-icon";
+      btn.appendChild(icon);
+      fetchIcon(name).then((value) => {
+        icon.textContent = value;
+      });
+
+      const label = document.createElement("span");
+      label.textContent = name;
+      btn.appendChild(label);
+
       btn.addEventListener("click", () => startChat(name));
       li.appendChild(btn);
       partnerList.appendChild(li);
@@ -335,7 +415,18 @@ function renderPartnerLists() {
   outgoing.forEach(({ name }) => {
     const li = document.createElement("li");
     li.className = "request-item outgoing";
-    li.textContent = `${name} さんへ申請中...`;
+
+    const icon = document.createElement("span");
+    icon.className = "list-icon";
+    li.appendChild(icon);
+    fetchIcon(name).then((value) => {
+      icon.textContent = value;
+    });
+
+    const label = document.createElement("span");
+    label.textContent = `${name} さんへ申請中...`;
+    li.appendChild(label);
+
     outgoingRequestsList.appendChild(li);
   });
 }
@@ -404,6 +495,10 @@ function startChat(partnerName) {
   partnerOverlay.hidden = true;
   chatContainer.hidden = false;
   chatTitle.textContent = partnerName;
+  chatPartnerIcon.textContent = "";
+  fetchIcon(partnerName).then((icon) => {
+    chatPartnerIcon.textContent = icon;
+  });
   messages.innerHTML = "";
 
   if (unsubscribeFriendshipsA) {

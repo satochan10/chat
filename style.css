@@ -69,6 +69,11 @@ body {
   padding: 0 4px;
 }
 
+.chat-partner-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
 .header-reload-btn {
   font-size: 34px;
   color: var(--cute-yellow);
@@ -334,6 +339,9 @@ body {
 
 .partner-item {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   border: 2px solid #ffd7e6;
   border-radius: 999px;
   background: #fff8fb;
@@ -368,11 +376,97 @@ body {
   gap: 8px;
 }
 
+.partner-section[hidden] {
+  display: none;
+}
+
 .partner-section h3 {
   margin: 0;
   font-size: 13px;
   color: #b38ab0;
   letter-spacing: 0.03em;
+}
+
+.partner-question {
+  margin: 0;
+  font-size: 16px;
+  color: #ff6fa0;
+  font-weight: 800;
+  text-align: center;
+}
+
+.profile-section {
+  padding-bottom: 14px;
+  border-bottom: 2px solid #ffe3ee;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.my-icon-btn {
+  border: 2px solid #ffd7e6;
+  border-radius: 50%;
+  background: #fff8fb;
+  width: 52px;
+  height: 52px;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s;
+  flex-shrink: 0;
+}
+
+.my-icon-btn:hover {
+  border-color: var(--cute-pink);
+}
+
+.my-icon-btn:active {
+  transform: scale(0.95);
+}
+
+.my-name-label {
+  font-weight: 700;
+  color: #6b4a5a;
+  font-size: 16px;
+}
+
+.icon-picker {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.icon-picker[hidden] {
+  display: none;
+}
+
+.icon-option {
+  border: 2px solid #ffd7e6;
+  border-radius: 12px;
+  background: #fff8fb;
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px 0;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s;
+}
+
+.icon-option:hover {
+  border-color: var(--cute-pink);
+}
+
+.icon-option:active {
+  transform: scale(0.92);
+}
+
+.list-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .partner-section + .partner-section {

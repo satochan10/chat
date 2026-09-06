@@ -2,14 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // users/{name}: 名前ごとのPINハッシュを保持する「アカウント」ドキュメント。
-    // 一度作成されたら本人（同じ名前・同じPIN）以外は上書きできない。
+    // users/{name}: 名前ごとのPINハッシュとアイコンを保持する「アカウント」ドキュメント。
+    // 一度作成されたらPINは本人（同じ名前・同じPIN）以外は上書きできない。
+    // アイコンは固定の絵文字リストの中からのみ、誰でも（名前さえ分かれば）変更可能（身内利用の簡易実装）。
     match /users/{name} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
-        && request.resource.data.keys().hasOnly(["pinHash", "createdAt"])
-        && request.resource.data.pinHash is string;
-      allow update, delete: if false;
+        && request.resource.data.keys().hasOnly(["pinHash", "createdAt", "icon"])
+        && request.resource.data.pinHash is string
+        && request.resource.data.icon in ["🐻", "🐰", "🐶", "🐱", "🦊", "🐼", "🐨", "🐯", "🦁", "🐸", "🐵", "🐹", "🐷", "🐮", "🐔", "🐧"];
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["icon"])
+        && request.resource.data.icon in ["🐻", "🐰", "🐶", "🐱", "🦊", "🐼", "🐨", "🐯", "🦁", "🐸", "🐵", "🐹", "🐷", "🐮", "🐔", "🐧"];
+      allow delete: if false;
     }
 
     // friendships/{pairId}: 2人の友達関係（申請・承認）。
