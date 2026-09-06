@@ -499,7 +499,7 @@ body {
   gap: 12px;
 }
 
-.my-icon-btn {
+button.my-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
